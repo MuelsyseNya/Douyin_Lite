@@ -1,9 +1,7 @@
 package service
 
 import (
-	"errors"
 	"github.com/Muelsyse/Douyin_Lite/middleware"
-	"github.com/Muelsyse/Douyin_Lite/model"
 	"github.com/Muelsyse/Douyin_Lite/repository"
 	"github.com/Muelsyse/Douyin_Lite/response"
 	"golang.org/x/crypto/bcrypt"
@@ -23,12 +21,12 @@ func (*UserService) lengthCheck(name string, password string) bool {
 	return true
 }
 
-func (u *UserService) Register(name string, password string) (*response.UserLoginResponse, error) {
+func (u *UserService) Register(name string, password string) *response.UserLoginResponse {
 	// 长度检查
 	if ok := u.lengthCheck(name, password); !ok {
 		return &response.UserLoginResponse{
 			Response: response.ErrPasswordLength,
-		}, errors.New("account name or password length is illegal")
+		}
 	}
 
 	if ok := repository.NewUserRepo().QueryUserDuplicate(name); ok {
@@ -38,24 +36,21 @@ func (u *UserService) Register(name string, password string) (*response.UserLogi
 		if err != nil {
 			return &response.UserLoginResponse{
 				Response: response.ErrPasswordEncrypt,
-			}, err
+			}
 		}
 		password = string(passwordByte)
 	} else {
 		return &response.UserLoginResponse{
 			Response: response.ErrDuplicatedName,
-		}, errors.New("user name already exists")
+		}
 	}
 
 	// 数据库中插入用户
-	userID, err := repository.NewUserRepo().CreateUser(&model.User{
-		Name:     name,
-		Password: password,
-	})
+	userID, err := repository.NewUserRepo().CreateUser(name, password)
 	if err != nil {
 		return &response.UserLoginResponse{
 			Response: response.ErrUserCreation,
-		}, err
+		}
 	}
 
 	// 设置token
@@ -63,7 +58,7 @@ func (u *UserService) Register(name string, password string) (*response.UserLogi
 	if err != nil {
 		return &response.UserLoginResponse{
 			Response: response.ErrTokenGenerate,
-		}, err
+		}
 	}
 
 	// 成功后，返回响应
@@ -71,15 +66,15 @@ func (u *UserService) Register(name string, password string) (*response.UserLogi
 		Response: response.OK,
 		UserId:   &userID,
 		Token:    &token,
-	}, err
+	}
 }
 
-func (u *UserService) Login(name string, password string) (*response.UserLoginResponse, error) {
+func (u *UserService) Login(name string, password string) *response.UserLoginResponse {
 	// 长度检查
 	if ok := u.lengthCheck(name, password); !ok {
 		return &response.UserLoginResponse{
 			Response: response.ErrPasswordLength,
-		}, errors.New("account name or password length is illegal")
+		}
 	}
 
 	// 从数据库中查询用户名对应ID和密码
@@ -87,7 +82,7 @@ func (u *UserService) Login(name string, password string) (*response.UserLoginRe
 	if err != nil {
 		return &response.UserLoginResponse{
 			Response: response.ErrLoginQuery,
-		}, err
+		}
 	}
 
 	// 和数据库中的加密密码进行比较
@@ -95,7 +90,7 @@ func (u *UserService) Login(name string, password string) (*response.UserLoginRe
 	if err != nil {
 		return &response.UserLoginResponse{
 			Response: response.ErrPassword,
-		}, err
+		}
 	}
 
 	// 设置token
@@ -103,7 +98,7 @@ func (u *UserService) Login(name string, password string) (*response.UserLoginRe
 	if err != nil {
 		return &response.UserLoginResponse{
 			Response: response.ErrTokenGenerate,
-		}, err
+		}
 	}
 
 	// 成功后，返回响应
@@ -111,5 +106,37 @@ func (u *UserService) Login(name string, password string) (*response.UserLoginRe
 		Response: response.OK,
 		UserId:   &userId,
 		Token:    &token,
-	}, err
+	}
+}
+
+func (*UserService) QueryUserInfo(toUserID int64, UserID int64) *response.UserResponse {
+	user, err := repository.NewUserRepo().QueryUserInfo(toUserID)
+	if err != nil {
+		return &response.UserResponse{
+			Response: response.ErrQueryUserInfo,
+		}
+	}
+	isFollow, err := repository.NewRelationRepo().IsFollow(UserID, toUserID)
+	if err != nil {
+		return &response.UserResponse{
+			Response: response.ErrQueryIfFollow,
+		}
+	}
+	// 查询完毕，返回响应
+	return &response.UserResponse{
+		Response: response.OK,
+		User: &response.User{
+			Avatar:          "",
+			BackgroundImage: "",
+			FavoriteCount:   user.FavoriteCount,
+			FollowerCount:   user.FollowerCount,
+			FollowCount:     user.FollowCount,
+			ID:              UserID,
+			IsFollow:        isFollow,
+			Name:            user.Name,
+			Signature:       user.Signature,
+			TotalFavorited:  user.TotalFavorited,
+			WorkCount:       user.WorkCount,
+		},
+	}
 }

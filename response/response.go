@@ -53,7 +53,7 @@ type UserLoginResponse struct {
 
 type UserResponse struct {
 	Response
-	User User `json:"user"`
+	User *User `json:"user"`
 }
 
 type UserListResponse struct {
@@ -73,5 +73,5 @@ type CommentListResponse struct {
 
 type CommentActionResponse struct {
 	Response
-	Comment Comment `json:"comment"`
+	Comment *Comment `json:"comment"`
 }

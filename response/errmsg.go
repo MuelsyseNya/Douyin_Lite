@@ -1,7 +1,8 @@
 package response
 
 var (
-	OK                 = Response{StatusCode: 0, StatusMsg: "OK")}
+	OK = Response{StatusCode: 0, StatusMsg: "OK"}
+
 	ErrLoginQuery      = Response{StatusCode: 101, StatusMsg: "Failed to query user login information"}
 	ErrTokenGenerate   = Response{StatusCode: 102, StatusMsg: "Token generation failed"}
 	ErrPassword        = Response{StatusCode: 103, StatusMsg: "Password error"}
@@ -11,4 +12,6 @@ var (
 	ErrDuplicatedName  = Response{StatusCode: 107, StatusMsg: "User name already exists"}
 	ErrParseInt        = Response{StatusCode: 108, StatusMsg: "Integer parsing failed"}
 	ErrQueryUserInfo   = Response{StatusCode: 109, StatusMsg: "Failed to query user information"}
+	ErrGetUserID       = Response{StatusCode: 110, StatusMsg: "Unable to resolve current user ID"}
+	ErrQueryIfFollow   = Response{StatusCode: 111, StatusMsg: "Query whether to follow failed"}
 )
